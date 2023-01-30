@@ -1,6 +1,6 @@
 <template>
-  <div class="d-flex justify-center">
-    <v-card style="width: 400px; padding: 16px;" elevation="0" color="transparent">
+  <div class="d-flex justify-center pt-16">
+    <v-card style="width: 400px;" elevation="0">
       <v-lazy style="text-align: center;" transition="fade-transition" min-height="71">
         <img src="/GitScratch-icon-background-blue.svg" width="64">
       </v-lazy>
@@ -19,9 +19,9 @@
       <v-window v-model="step" touchless>
         <v-window-item :value="1">
           <v-card-text>
-            <v-form ref="emailForm" v-model="emailValid" lazy-validation>
+            <v-form ref="emailForm" v-model="emailValid" @submit.native.prevent @keydown.enter.native="next()">
               <v-text-field
-                v-model="userEmail"
+                v-model="form.email"
                 label="电子邮箱"
                 :rules="emailRules"
               />
@@ -34,9 +34,9 @@
 
         <v-window-item :value="2">
           <v-card-text>
-            <v-form ref="nameForm" v-model="usernameValid" lazy-validation>
+            <v-form ref="nameForm" v-model="usernameValid" @submit.native.prevent @keydown.enter.native="next()">
               <v-text-field
-                v-model="username"
+                v-model="form.username"
                 label="用户名"
                 :rules="nameRules"
               />
@@ -49,9 +49,9 @@
 
         <v-window-item :value="3">
           <v-card-text>
-            <v-form ref="passwordForm" v-model="passwordValid" lazy-validation>
+            <v-form ref="passwordForm" v-model="passwordValid" @submit.native.prevent @keydown.enter.native="next()">
               <v-text-field
-                v-model="userPassword"
+                v-model="form.password"
                 label="密码"
                 :type="password_visible ? 'text' : 'password'"
                 :rules="passwordRules"
@@ -60,25 +60,27 @@
               />
             </v-form>
             <span class="text-caption grey--text text--darken-1">
-              为你的帐号设置一个密码。
+              为你的帐户设置一个密码。
             </span>
           </v-card-text>
         </v-window-item>
 
         <v-window-item :value="4">
           <v-card-text>
-            <v-form ref="captchaForm" v-model="captchaValid" lazy-validation>
-              <v-img src="/captcha.png" />
+            <v-form ref="captchaForm" v-model="captchaValid" @submit.native.prevent @keydown.enter.native="next()">
+              <img id="captcha" :src="captcha_base64" style="width: 100%;">
               <v-text-field
-                v-model="captcha"
-                label="验证码"
+                v-model="form.captcha_value"
+                append-icon="mdi-refresh"
+                label="图中事件发生的年份，公元前加“-”"
                 style="border-radius: 4px;"
                 :rules="captchaRules"
                 type="number"
+                @click:append="reloadCaptcha()"
               />
             </v-form>
             <span class="text-caption grey--text text--darken-1">
-              输入验证码（图中事件发生的年份，公元前加“-”）
+              有效期15分钟
             </span>
           </v-card-text>
         </v-window-item>
@@ -93,7 +95,7 @@
 
         <v-window-item :value="6">
           <div class="pa-4 text-center">
-            <v-img
+            <!-- <v-img
               v-if="!$vuetify.theme.dark"
               class="mb-4"
               contain
@@ -106,7 +108,7 @@
               contain
               height="128"
               src="/GitScratch-icon-white.svg"
-            />
+            /> -->
             <h3 class="text-h6">
               欢迎加入 GitScratch！
             </h3>
@@ -117,12 +119,10 @@
         </v-window-item>
       </v-window>
 
-      <v-divider />
-
       <v-card-actions>
         <transition name="slide-y-reverse-transition">
           <v-btn
-            v-if="!(step === 1 || step >= 4)"
+            v-if="!(step>4 || step==1)"
             outlined
             rounded
             color="primary"
@@ -133,18 +133,20 @@
         </transition>
 
         <v-spacer />
-
-        <v-btn
-          :loading="loading"
-          :disabled="!(emailValid && usernameValid && passwordValid && captchaValid)"
-          color="primary"
-          depressed
-          rounded
-          :to="step === steps ? '/' : ''"
-          @click="next()"
-        >
-          {{ step === steps ? "完成" : "下一步" }}
-        </v-btn>
+        <transition name="slide-y-reverse-transition">
+          <v-btn
+            v-if="!(step==5)"
+            :loading="loading"
+            :disabled="!currentValid"
+            color="primary"
+            depressed
+            rounded
+            :to="step === 6 ? '/' : ''"
+            @click="next()"
+          >
+            {{ step === 6 ? "完成" : "下一步" }}
+          </v-btn>
+        </transition>
       </v-card-actions>
     </v-card>
   </div>
@@ -153,33 +155,52 @@
 <script>
 export default {
   data: () => ({
+    form: {
+      name: '',
+      password: '',
+      email: '',
+      captcha_uuid: '',
+      captcha_value: ''
+    },
     step: 1,
-    steps: 6,
     loading: false,
     password_visible: false,
-    userEmail: '',
-    username: '',
-    userPassword: '',
-    captcha: '',
+    captcha_base64: '',
+    captcha_isLoading: true,
     emailValid: true,
     usernameValid: true,
     passwordValid: true,
     captchaValid: true,
     emailRules: [
-      v => !!v || '电子邮箱不能为空',
-      v => (v && /.+@.+\..+/.test(v)) || '电子邮箱无效'
+      v => !!v || '电子邮箱地址不能为空',
+      v => /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(v) || '无效的电子邮箱地址'
     ],
     passwordRules: [
       v => !!v || '密码不能为空',
-      v => (v && v.length >= 6) || '密码不少于 6 个字符'
+      v => /^\S*(?=\S{6,})(?=\S*\d)(?=\S*[A-Za-z])\S*$/.test(v) || '密码需要不少于 6 个字符，必须包含字母和数字'
     ],
     nameRules: [
       v => !!v || '用户名不能为空'
     ],
     captchaRules: [
-      v => !!v || '验证码不能为空'
+      v => !!v || '验证码不能为空',
+      v => /^-?\d{0,4}$/.test(v) || '无效的验证码'
     ]
   }),
+  async fetch () {
+    await this.$axios.$get('/auth/captcha').then((res) => {
+      if (res.status === 'success') {
+        this.form.captcha_uuid = res.data.captcha_uuid
+        this.captcha_base64 = res.data.captcha_base64
+      } else {
+        this.$dialog.error({
+          text: res.message,
+          title: '无法获取验证码'
+        })
+      }
+      this.captcha_isLoading = false
+    })
+  },
   head () {
     return {
       title: '注册'
@@ -195,43 +216,62 @@ export default {
         case 5: return '正在注册'
         default: return '已注册'
       }
+    },
+    currentValid () {
+      switch (this.step) {
+        case 1: return this.emailValid
+        case 2: return this.usernameValid
+        case 3: return this.passwordValid
+        case 4: return this.captchaValid
+        default: return true
+      }
     }
   },
   methods: {
+    reloadCaptcha () {
+      this.captcha_isLoading = true
+      this.$fetch()
+    },
     next () {
-      if (this.step === 1) {
-        this.emailValid = this.$refs.emailForm.validate()
-        if (this.emailValid) {
-          this.step++
-        }
-      } else if (this.step === 2) {
-        this.usernameValid = this.$refs.nameForm.validate()
-        if (this.usernameValid) {
-          this.step++
-        }
-      } else if (this.step === 3) {
-        this.passwordValid = this.$refs.passwordForm.validate()
-        if (this.passwordValid) {
-          this.step++
-        }
-      } else if (this.step === 4) {
-        this.captchaValid = this.$refs.captchaForm.validate()
-        if (this.captchaValid) {
-          this.step++
-        }
+      if (this.step >= 1 && this.step <= 4) {
+        this.step++
       }
-      if (this.step === this.steps - 1) {
+      if (this.step === 5) {
         this.register()
       }
     },
-    register () {
+    async register () {
       this.loading = true
-      this.$http.$post('/auth/register').then((res) => {
-        console.log(res)
-        this.loading = false
-        this.step = this.steps
+      const regRes = await this.$axios.$post('/auth/register', {
+        username: this.form.username,
+        password: this.form.password,
+        email: this.form.email,
+        captcha_uuid: this.form.captcha_uuid,
+        captcha_value: this.form.captcha_value
       })
+      if (regRes) {
+        this.$auth
+          .loginWith('local', {
+            data: {
+              email: this.form.email,
+              password: this.form.password
+            }
+          })
+      } else {
+        this.step--
+      }
+      this.loading = false
     }
   }
+
 }
 </script>
+<style>
+.theme--dark img#captcha {
+    filter: invert(0.93);
+}
+
+.theme--light img#captcha {
+    filter: unset;
+}
+</style>

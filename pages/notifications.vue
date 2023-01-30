@@ -1,6 +1,9 @@
 <template>
   <v-row>
     <v-col cols="12" xl="2" md="3" sm="4" style="padding-right: 20px;">
+      <p class="text-h4">
+        通知
+      </p>
       <v-list
         dense
         nav
@@ -60,21 +63,24 @@
           <v-divider />
           <v-menu offset-y>
             <template #activator="{ on, attrs }">
-              <v-subheader
+              <v-btn
                 v-bind="attrs"
+                text
+                block
+                rounded
                 v-on="on"
               >
                 管理通知
-              </v-subheader>
+              </v-btn>
             </template>
             <v-list
               dense
             >
-              <v-list-item link to="/settings">
+              <v-list-item link to="/settings#notifications">
                 <v-list-item-title>通知设置</v-list-item-title>
               </v-list-item>
               <v-list-item link to="/settings">
-                <v-list-item-title>监视的作品</v-list-item-title>
+                <v-list-item-title>关注的作品</v-list-item-title>
               </v-list-item>
               <v-list-item link to="/settings">
                 <v-list-item-title>订阅</v-list-item-title>
@@ -172,6 +178,7 @@
 <script>
 const marked = require('marked')
 export default {
+  middleware: 'auth',
   data: () => ({
     model: 0,
     data: {
@@ -331,7 +338,7 @@ export default {
 
   }),
   async fetch () {
-    // this.data = await this.$http.$get('/notifications')
+    // this.data = await this.$axios.$get('/notifications')
   },
   head () {
     return {
@@ -484,6 +491,7 @@ export default {
       return ('几秒前')
     }
   }
+
 }
 </script>
 <style>

@@ -18,7 +18,7 @@
     </v-card-text>
 
     <v-card-actions :style="$vuetify.breakpoint.smAndUp ? 'position: absolute; bottom: 0; left: 0; right: 0; ' : 'unset'">
-      <div class="d-flex flex-column" style="width: 100%;">
+      <div style="width: 100%;">
         <v-btn
           block
           depressed
@@ -31,46 +31,36 @@
             mdi-check
           </v-icon>签到
         </v-btn>
-        <v-dialog
-          v-model="dialog"
-          max-width="500"
-          overlay-opacity="0.3"
-        >
-          <v-card class="cardblur">
-            <v-card-title class="text-h5">
-              签到成功
-            </v-card-title>
-
-            <v-card-text>
-              {{ hitokoto }}
-            </v-card-text>
-
-            <v-card-actions>
-              <v-spacer />
-
-              <v-btn
-                text
-                rounded
-                @click="dialog = false"
-              >
-                关闭
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-
-        <v-btn
-          block
-          color="primary"
-          to="/project/editor"
-          class="mt-2"
-          rounded
-          depressed
-        >
-          <v-icon left>
-            mdi-plus
-          </v-icon>创建
-        </v-btn>
+        <v-row>
+          <v-col>
+            <v-btn
+              color="primary"
+              class="mt-2"
+              rounded
+              depressed
+              block
+              @click="newProject"
+            >
+              <v-icon left>
+                mdi-plus
+              </v-icon>创建
+            </v-btn>
+          </v-col>
+          <v-col>
+            <v-btn
+              color="primary"
+              to="/projects/upload"
+              class="mt-2"
+              rounded
+              depressed
+              block
+            >
+              <v-icon left>
+                mdi-upload
+              </v-icon>上传
+            </v-btn>
+          </v-col>
+        </v-row>
       </div>
     </v-card-actions>
   </v-card>
@@ -78,19 +68,36 @@
 <script>
 export default {
   data: () => ({
-    dialogLoading: false,
-    dialog: false,
-    hitokoto: ''
+    dialogLoading: false
   }),
 
   methods: {
-    sign () {
+    async sign () {
       this.dialogLoading = true
-      this.$http.$get('https://v1.hitokoto.cn/').then((res) => {
-        this.dialogLoading = false
-        this.hitokoto = res.hitokoto
-        this.dialog = true
-      })
+      const hitokoto = await this.$axios.$get('https://v1.hitokoto.cn/')
+      // console.log(hitokoto)
+      if (hitokoto) {
+        const result = await this.$dialog.info({
+          text: hitokoto.hitokoto,
+          title: '签到成功',
+          actions: [{
+            text: '查看', key: true
+          },
+          {
+            text: '关闭', color: 'blue', key: false
+          }]
+        })
+        if (result === true) {
+          window.open('https://hitokoto.cn/?uuid=' + hitokoto.uuid, '_blank')
+        }
+      }
+      this.dialogLoading = false
+    },
+    async newProject () {
+      // const res = await this.$axios.$post(`/users/${this.data.id}/projects/new`, {
+      // })
+      // // console.log(res)
+      // this.$router.push(`/projects/${res.data.id}`)
     }
   }
 }

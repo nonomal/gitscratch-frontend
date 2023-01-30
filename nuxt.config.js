@@ -1,5 +1,7 @@
 import colors from 'vuetify/lib/util/colors'
 const isDev = process.env.NODE_ENV !== 'production'
+const apiUrl = process.env.API_URL ? process.env.API_URL : 'http://127.0.0.1:3000'
+console.log(apiUrl)
 module.exports = {
   components: true,
   // https://nuxtjs.org/api/configuration-modern
@@ -15,47 +17,56 @@ module.exports = {
     htmlAttrs: {
       lang: 'zh-CN'
     },
-    meta: [{
-      charset: 'utf-8'
-    },
-    {
-      name: 'viewport',
-      content: 'width=device-width, initial-scale=1'
-    },
-    {
-      hid: 'description',
-      name: 'description',
-      content: 'Endless Possiblities with GitScratch. 与 GitScratch 共赴诗和远方。'
-    },
-    {
-      name: 'format-detection',
-      content: 'telephone=no'
-    }
+    meta: [
+      {
+        charset: 'utf-8'
+      },
+      {
+        name: 'viewport',
+        content: 'width=device-width, initial-scale=1'
+      },
+      {
+        hid: 'description',
+        name: 'description',
+        content:
+          'Endless Possiblities with GitScratch. 与 GitScratch 共赴诗和远方。'
+      },
+      {
+        name: 'format-detection',
+        content: 'telephone=no'
+      }
     ],
-    link: [{
-      rel: 'icon',
-      type: 'image/svg+xml',
-      href: '/GitScratch-icon-background-blue.svg'
-    },
-    {
-      vmid: 'hljs-style',
-      rel: 'stylesheet',
-      type: 'text/css',
-      href: '/highlight.js/styles/github.css'
-    }]
+    link: [
+      {
+        rel: 'icon',
+        type: 'image/svg+xml',
+        href: '/GitScratch-icon-background-blue.svg'
+      },
+      {
+        rel: 'stylesheet',
+        type: 'text/css',
+        href: '/highlight.js/styles/github-dark.css'
+      }
+    ]
   },
 
   // https://nuxtjs.org/api/configuration-modules
   modules: [
-    // https://http.nuxtjs.org/getting-started/setup
-    '@nuxt/http',
-
     // https://github.com/frenchrabbit/nuxt-precompress
-    'nuxt-precompress'
-
+    'nuxt-precompress',
+    // https://github.com/UniScratch/vuetify-dialog
+    'vuetify-dialog/nuxt',
+    // https://axios.nuxtjs.org/
+    '@nuxtjs/axios',
+    // https://dev.auth.nuxtjs.org
+    '@nuxtjs/auth-next'
   ],
 
   plugins: [
+    '~/plugins/dateFormatter',
+    { src: '~/plugins/http', mode: 'client' },
+    '~/plugins/permission',
+    '~/plugins/utils'
   ],
   buildModules: [
     // Simple usage
@@ -63,8 +74,48 @@ module.exports = {
 
     // https://github.com/nuxt-community/eslint-module
     '@nuxtjs/eslint-module'
-
   ],
+  axios: {
+    baseURL: apiUrl
+  },
+  auth: {
+    // cookie: false,
+    rewriteRedirects: false,
+    redirect: {
+      login: '/auth/login',
+      logout: '/',
+      home: '/'
+    },
+    strategies: {
+      local: {
+        token: {
+          property: 'data.session',
+          name: 'X-GitScratch-Session',
+          type: '',
+          maxAge: false
+        },
+        user: {
+          property: 'data.data',
+          autoFetch: true
+        },
+        endpoints: {
+          login: {
+            url: '/auth/login',
+            method: 'post'
+          },
+          logout: {
+            url: '/auth/logout',
+            method: 'post'
+          },
+          user: {
+            url: '/auth/session',
+            method: 'get'
+          }
+        }
+      }
+    }
+    // Options
+  },
 
   vuetify: {
     customVariables: ['~/assets/styles/variables.scss'],
@@ -92,11 +143,21 @@ module.exports = {
       }
     }
   },
-  // https://http.nuxtjs.org/
-  http: {
-    baseURL: 'https://mock.apifox.cn/m1/927078-0-default'
+  vuetifyDialog: {
+    property: '$dialog',
+    confirm: {
+      icon: false
+    },
+    warning: {
+      icon: false
+    },
+    error: {
+      icon: false
+    },
+    prompt: {
+      icon: false
+    }
   },
-
   // https://github.com/nuxt-community/eslint-module
   eslint: {
     fix: true,
@@ -108,28 +169,27 @@ module.exports = {
 
   // https://nuxtjs.org/api/configuration-build
   build: {
-    // ssr: !isElectron,
+    // analyze: true,
+    hardSource: true,
+    cache: true,
     ssr: true,
-    parallel: isDev,
-    // terser: {
-    //   parallel: true,
-    //   terserOptions: { // https://github.com/terser/terser
-    //     compress: {
-    //       drop_console: true,
-    //       arguments: true,
-    //       passes: 1
-    //     },
-    //     format: {
-    //       comments: false,
-    //       max_line_len: 1024
-    //     }
-    //   }
-    // },
+    parallel: true,
+    terser: {
+      parallel: true,
+      terserOptions: { // https://github.com/terser/terser
+        compress: {
+          drop_console: true,
+          arguments: true,
+          passes: 1
+        },
+        format: {
+          comments: false,
+          max_line_len: 1024
+        }
+      }
+    },
     extractCSS: !isDev,
-    extend (config, {
-      isDev,
-      isClient
-    }) {
+    extend (config, { isDev, isClient }) {
       config.output.globalObject = 'this'
     }
   },
@@ -138,7 +198,8 @@ module.exports = {
     host: '0.0.0.0'
   },
   loading: {
-    color: '#2196F3'
+    color: '#2196F3',
+    continuous: true
   },
   pageTransition: {
     name: 'slide-top',
@@ -147,5 +208,4 @@ module.exports = {
   router: {
     prefetchLinks: false
   }
-
 }

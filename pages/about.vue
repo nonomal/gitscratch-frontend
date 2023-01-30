@@ -1,8 +1,10 @@
 <template>
   <div>
-    <h1>关于 GitScratch</h1>
+    <p class="text-h4">
+      关于 GitScratch
+    </p>
     <p>GitScratch 是一个 Git 风格的 Scratch 社区，正在开发中。</p>
-    <v-btn target="_blank" href="https://github.com/UniScratch/gitscratch-frontend" text rounded>
+    <v-btn target="_blank" href="https://github.com/UniScratch/gitscratch-frontend" text rounded color="primary">
       <v-icon>
         mdi-github
       </v-icon>
@@ -26,11 +28,17 @@
       </v-icon>
       QQ频道
     </v-btn> -->
-    <v-btn target="_blank" href="https://jq.qq.com/?_wv=1027&amp;k=YZzXfixv" text rounded>
+    <v-btn target="_blank" href="https://jq.qq.com/?_wv=1027&amp;k=YZzXfixv" text rounded color="primary">
       <v-icon>mdi-qqchat</v-icon>
       QQ 群聊
     </v-btn>
-    <h2>版本信息</h2>
+    <v-btn target="_blank" href="https://t.me/GitScratch" text rounded color="primary">
+      <v-icon>mdi-send</v-icon>
+      Telegram
+    </v-btn>
+    <p class="text-h5">
+      版本信息
+    </p>
     <p>
       <a target="_blank" :href="'https://github.com/UniScratch/gitscratch-frontend/commit/'+meta.commitHash">在 GitHub 上查看</a>
       <br>
@@ -40,12 +48,14 @@
       <br>
       构建时间：{{ meta.compileTime }}
     </p>
-    <h2>贡献者</h2>
+    <p class="text-h5">
+      贡献者
+    </p>
     <p>
       <template v-for="(item, key) in 贡献者">
         {{ key }}：
-        <a v-for="(childItem, childKey) in item" :key="childKey" target="_blank" :href="'https://github.com/' + childItem">
-          @{{ childItem }}
+        <a v-for="(childItem, childKey) in item" :key="childKey" target="_blank" :href="贡献者信息[childItem]">
+          {{ childItem }}
         </a>
         <br :key="key">
       </template>
@@ -109,9 +119,23 @@ export default {
     贡献者: {
       项目提出: ['Dispure', 'HydroGest'],
       金主: [],
-      主要贡献者: ['Dispure', 'HydroGest', 'TimFang4162', 'wrj2009'],
-      云服务支持: ['Someone-Yang'],
+      主要编码者: ['Dispure', 'HydroGest', 'TimFang4162', 'wrj2009'],
+      多语言支持: ['蓝莓莓'],
+      吉祥物设计: ['小孟', '小怡'],
+      云服务支持: ['Someone-Yang', '玲行云端'],
       其他贡献者: ['frank-782']
+    },
+    贡献者信息: {
+      Dispure: 'https://github.com/Dispure',
+      HydroGest: 'https://github.com/HydroGest',
+      TimFang4162: 'https://github.com/TimFang4162',
+      小孟: null,
+      小怡: null,
+      wrj2009: 'https://github.com/wrj2009',
+      'Someone-Yang': 'https://github.com/Someone-Yang',
+      玲行云端: 'https://www.incloudify.com/',
+      'frank-782': 'https://github.com/frank-782',
+      蓝莓莓: 'https://github.com/LanmeiCN'
     },
     meta: require('static/meta.json'),
     overlay: false,

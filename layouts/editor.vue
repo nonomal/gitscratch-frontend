@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <Appbar />
+    <Appbar is-editor />
     <v-main>
       <Nuxt />
     </v-main>
@@ -8,6 +8,7 @@
 </template>
 <script>
 export default {
+  name: 'Editor',
   transition: 'slide-top'
 }
 </script>
